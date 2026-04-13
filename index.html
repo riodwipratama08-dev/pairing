@@ -3,68 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Scan Pairing">
-  <title>Scan Pairing — Inventory</title>
+  <title>Scan Pairing — Dynamic Area</title>
   
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
       --teal: #1D9E75;
       --teal-light: #E1F5EE;
-      --teal-dark: #0F6E56;
-      --red: #E24B4A;
-      --red-light: #FCEBEB;
-      --amber: #BA7517;
-      --amber-light: #FAEEDA;
       --gray-50: #F8F8F6;
       --gray-100: #F0EFEA;
-      --gray-200: #D3D1C7;
       --gray-400: #888780;
-      --gray-600: #5F5E5A;
       --gray-900: #1A1A18;
       --white: #FFFFFF;
       --border: #E0DED6;
-      --border-strong: #C4C2B8;
-      --radius-sm: 8px;
       --radius-md: 12px;
-      --radius-lg: 16px;
-      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
       --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      --mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
     }
 
-    body {
-      height: 100%;
-      font-family: var(--font);
-      background: var(--gray-50);
-      color: var(--gray-900);
-      -webkit-font-smoothing: antialiased;
-    }
-
+    body { font-family: var(--font); background: var(--gray-50); color: var(--gray-900); }
     .app { min-height: 100vh; display: flex; flex-direction: column; }
     .screen { display: none; flex: 1; flex-direction: column; }
     .screen.active { display: flex; }
 
     /* CONFIG SCREEN */
     .cfg-wrap { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 2rem 1.25rem; max-width: 480px; margin: 0 auto; width: 100%; }
-    .cfg-logo { display: flex; flex-direction: column; align-items: center; margin-bottom: 2.5rem; }
-    .cfg-logo .icon { width: 56px; height: 56px; border-radius: var(--radius-md); border: 2px solid var(--teal); display: flex; align-items: center; justify-content: center; margin-bottom: 14px; background: var(--teal-light); }
-    .cfg-logo h1 { font-size: 22px; font-weight: 600; color: var(--gray-900); }
-
     .field { margin-bottom: 14px; }
-    label { display: block; font-size: 13px; font-weight: 500; color: var(--gray-600); margin-bottom: 6px; }
-    input {
-      display: block; width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 15px; background: var(--white);
-    }
-    input:focus { outline: none; border-color: var(--teal); }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    input { display: block; width: 100%; padding: 12px; border: 1.5px solid var(--border); border-radius: 8px; }
 
-    /* SCANNER UI */
+    /* SCANNER UI - DYNAMIC AREA */
     .scanner-container {
       position: relative;
       width: 100%;
@@ -73,49 +42,32 @@
       overflow: hidden;
       margin-bottom: 12px;
       border: 1px solid var(--border);
+      aspect-ratio: 4/3;
     }
-    #reader { width: 100%; }
-    
-    /* Kotak Bidik / Overlay */
-    #scanner-overlay {
+    #reader { width: 100%; height: 100%; }
+
+    /* Kotak Dinamis ala Dynamsoft */
+    #dynamic-box {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 260px;
-      height: 160px;
-      border: 2px solid rgba(255, 255, 255, 0.4);
-      border-radius: 12px;
+      border: 3px solid var(--teal);
+      background: rgba(29, 158, 117, 0.15);
+      border-radius: 4px;
       pointer-events: none;
-      z-index: 5;
-      transition: all 0.3s ease;
-    }
-    #scanner-overlay.detected {
-      border-color: #1D9E75;
-      background: rgba(29, 158, 117, 0.25);
-      box-shadow: 0 0 20px rgba(29, 158, 117, 0.6);
+      z-index: 10;
+      display: none; /* Muncul hanya saat terdeteksi */
+      transition: all 0.1s ease-out;
     }
 
-    .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 600; cursor: pointer; }
+    .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
     .btn-primary { background: var(--teal); color: #fff; }
-    .btn-secondary { background: var(--gray-100); color: var(--gray-600); border: 1px solid var(--border); }
 
-    /* MAIN SCREEN STYLES */
-    .scan-header { background: var(--white); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
-    .scan-body { flex: 1; padding: 16px; max-width: 560px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 12px; }
-    
-    .resi-card { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 16px; transition: 0.3s; }
-    .resi-card.locked { border-color: var(--teal); background: #f0fdf8; }
-    .resi-value { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--gray-400); }
-    .resi-card.locked .resi-value { color: var(--gray-900); }
-    
-    .scan-box { background: var(--white); border: 2px solid var(--teal); border-radius: var(--radius-md); padding: 16px; }
-    .scan-input { font-family: var(--mono); font-size: 18px; margin-top: 8px; background: var(--gray-50); }
-
-    .prod-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 6px; }
-    .prod-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); }
-
-    .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 20px; border-radius: 30px; display: none; z-index: 1000; }
+    /* MAIN SCREEN */
+    .scan-header { background: var(--white); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .scan-body { flex: 1; padding: 16px; max-width: 560px; margin: 0 auto; width: 100%; }
+    .resi-card { background: var(--white); border: 2px solid var(--border); border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px; }
+    .resi-card.locked { border-color: var(--teal); background: var(--teal-light); }
+    .scan-box { background: var(--white); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius-md); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .prod-item { padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 6px; margin-top: 5px; font-family: monospace; }
   </style>
 </head>
 <body>
@@ -123,215 +75,148 @@
 <div class="app">
   <div id="scr-cfg" class="screen active">
     <div class="cfg-wrap">
-      <div class="cfg-logo">
-        <div class="icon">🚀</div>
-        <h1>Setup Scan Pairing</h1>
+      <h2 style="text-align:center; margin-bottom:20px;">Scan Pairing Setup</h2>
+      <div class="field">
+        <label>Operator</label>
+        <input id="inp-op" type="text" placeholder="Nama Anda">
       </div>
       <div class="field">
-        <label>Nama Operator</label>
-        <input id="inp-op" type="text" placeholder="Contoh: Budi">
-      </div>
-      <div class="field">
-        <label>Google Apps Script URL</label>
+        <label>Apps Script URL</label>
         <input id="inp-url" type="url" placeholder="https://script.google.com/...">
       </div>
-      <button class="btn btn-primary" onclick="startApp()">Masuk Aplikasi</button>
+      <button class="btn btn-primary" onclick="startApp()">Buka Kamera</button>
     </div>
   </div>
 
   <div id="scr-main" class="screen">
     <div class="scan-header">
-      <div>
-        <div id="hdr-op" style="font-weight:700">Operator</div>
-        <div id="hdr-conn" style="font-size:11px; color:gray">Ready</div>
-      </div>
-      <button class="btn btn-secondary" style="width:auto; padding:5px 10px" onclick="location.reload()">Reset</button>
+      <div id="hdr-op" style="font-weight:bold">Operator</div>
+      <button onclick="location.reload()" style="background:none; border:none; color:red; cursor:pointer">Keluar</button>
     </div>
 
     <div class="scan-body">
       <div class="resi-card" id="resi-card">
-        <div style="font-size:11px; color:gray; font-weight:700">RESI TERKUNCI</div>
-        <div class="resi-value" id="resi-val">— Belum Scan —</div>
-        <div id="resi-badge" style="display:none; color:var(--teal); font-weight:bold; font-size:12px"></div>
+        <div style="font-size:11px; color:gray;">STATUS RESI</div>
+        <div id="resi-val" style="font-size:20px; font-weight:bold; font-family:monospace;">— Kosong —</div>
       </div>
 
       <div class="scan-box">
         <div class="scanner-container">
           <div id="reader"></div>
-          <div id="scanner-overlay"></div>
+          <div id="dynamic-box"></div>
         </div>
         
-        <label id="scan-lbl" style="font-weight:700">Scan Kode Resi</label>
-        <input id="scan-inp" class="scan-input" type="text" placeholder="Menunggu input..." autocomplete="off">
-        <button id="btn-newresi" class="btn btn-secondary" style="display:none; margin-top:10px" onclick="newResi()">+ Ganti Resi</button>
+        <label id="scan-lbl" style="font-size:12px; font-weight:bold;">SCAN RESI SEKARANG</label>
+        <input id="scan-inp" type="text" style="font-family:monospace; font-size:18px; margin-top:5px; background:#f0f0f0;" readonly>
+        <button id="btn-reset" class="btn" style="margin-top:10px; display:none; background:#eee;" onclick="resetResi()">Ganti Resi</button>
       </div>
 
-      <div id="prod-section" style="display:none">
-        <div style="font-size:12px; color:gray; margin-bottom:8px">PRODUK TERPASANG</div>
+      <div id="log-section" style="margin-top:20px;">
+        <div style="font-size:12px; color:gray; margin-bottom:5px;">HASIL SCAN</div>
         <div id="prod-list"></div>
       </div>
     </div>
   </div>
 </div>
 
-<div id="toast" class="toast"></div>
-
 <script>
-// --- STATE ---
-let S = {
-  operator: '',
-  gasUrl: '',
-  mode: 'resi', // 'resi' atau 'produksi'
-  resi: null,
-  html5QrCode: null,
-  lastScannedCode: '',
-  isProcessing: false
-};
+let state = { op: '', url: '', mode: 'resi', lastCode: '', isProcessing: false };
 
-// --- LOGIKA KAMERA ---
-async function initCamera() {
-  if (S.html5QrCode) await S.html5QrCode.stop();
-  
-  S.html5QrCode = new Html5Qrcode("reader");
-  const overlay = document.getElementById('scanner-overlay');
-  
-  const config = { 
-    fps: 15, 
-    qrbox: { width: 260, height: 160 },
-    aspectRatio: 1.777778
-  };
-
-  S.html5QrCode.start(
-    { facingMode: "environment" }, 
-    config, 
-    (decodedText) => {
-      // LOGIKA ANTI-DUPLIKAT & COOLDOWN
-      if (decodedText === S.lastScannedCode || S.isProcessing) return;
-
-      // Berhasil Baca
-      S.isProcessing = true;
-      S.lastScannedCode = decodedText;
-      overlay.classList.add('detected'); // Berubah Hijau
-
-      document.getElementById('scan-inp').value = decodedText;
-      handleScan();
-
-      if (navigator.vibrate) navigator.vibrate(100);
-
-      // Cooldown 2 detik sebelum bisa scan lagi
-      setTimeout(() => {
-        overlay.classList.remove('detected');
-        S.isProcessing = false;
-        // S.lastScannedCode = ''; // Uncomment jika ingin bisa scan barang yang sama berturut-turut
-      }, 2000);
-    }
-  ).catch(err => console.error("Camera Error:", err));
-}
-
-// --- LOGIKA APLIKASI ---
-function startApp() {
-  S.operator = document.getElementById('inp-op').value;
-  S.gasUrl = document.getElementById('inp-url').value;
-  if(!S.operator) return alert("Nama operator wajib diisi");
+async function startApp() {
+  state.op = document.getElementById('inp-op').value;
+  if(!state.op) return alert("Isi nama dulu");
   
   document.getElementById('scr-cfg').classList.remove('active');
   document.getElementById('scr-main').classList.add('active');
-  document.getElementById('hdr-op').textContent = S.operator;
-  
-  initCamera();
-  
-  // Auto-focus input setiap 3 detik (untuk hardware scanner)
-  setInterval(() => {
-    if(document.activeElement.tagName !== 'INPUT') document.getElementById('scan-inp').focus();
-  }, 3000);
+  document.getElementById('hdr-op').textContent = state.op;
+
+  initScanner();
 }
 
-function handleScan() {
-  const val = document.getElementById('scan-inp').value.trim().toUpperCase();
-  if (!val) return;
-  document.getElementById('scan-inp').value = '';
+function initScanner() {
+  const html5QrCode = new Html5Qrcode("reader");
+  const dynamicBox = document.getElementById('dynamic-box');
 
-  if (S.mode === 'resi') {
-    processResi(val);
-  } else {
-    processProduksi(val);
-  }
-}
-
-function processResi(val) {
-  S.resi = val;
-  S.mode = 'produksi';
-  S.lastScannedCode = ''; // Reset lock saat ganti mode
-  
-  document.getElementById('resi-val').textContent = val;
-  document.getElementById('resi-card').classList.add('locked');
-  document.getElementById('scan-lbl').textContent = "Scan Kode Produksi";
-  document.getElementById('btn-newresi').style.display = 'block';
-  document.getElementById('prod-section').style.display = 'block';
-  document.getElementById('prod-list').innerHTML = '';
-  
-  showToast("Resi Terkunci!");
-}
-
-function processProduksi(val) {
-  // Jika tidak sengaja scan resi lain
-  if (val.length > 15) { // Asumsi kode produksi lebih pendek dari resi
-    if (confirm("Ganti ke Resi baru?")) {
-      processResi(val);
-      return;
+  const config = { 
+    fps: 20, 
+    qrbox: (viewfinderWidth, viewfinderHeight) => {
+        return { width: viewfinderWidth * 0.8, height: viewfinderHeight * 0.6 };
     }
-  }
-
-  const item = document.createElement('div');
-  item.className = 'prod-item';
-  item.innerHTML = `<div class="prod-dot"></div><div style="font-family:monospace">${val}</div>`;
-  document.getElementById('prod-list').prepend(item);
-
-  // Kirim ke Google Sheets
-  syncData(val);
-}
-
-function newResi() {
-  S.mode = 'resi';
-  S.resi = null;
-  S.lastScannedCode = '';
-  document.getElementById('resi-val').textContent = "— Belum Scan —";
-  document.getElementById('resi-card').classList.remove('locked');
-  document.getElementById('scan-lbl').textContent = "Scan Kode Resi";
-  document.getElementById('btn-newresi').style.display = 'none';
-  document.getElementById('prod-section').style.display = 'none';
-}
-
-function syncData(prodCode) {
-  if (!S.gasUrl) return;
-  const payload = {
-    timestamp: new Date().toLocaleString(),
-    kodeResi: S.resi,
-    kodeProduksi: prodCode,
-    operator: S.operator
   };
 
-  fetch(S.gasUrl, {
-    method: 'POST',
-    mode: 'no-cors',
-    body: JSON.stringify(payload)
-  }).then(() => {
-    document.getElementById('hdr-conn').textContent = "Terakhir Sinkron: " + new Date().toLocaleTimeString();
-  });
+  html5QrCode.start(
+    { facingMode: "environment" }, 
+    config, 
+    (decodedText, result) => {
+      // Logika Sekali Simpan & Anti Duplikat
+      if (decodedText === state.lastCode || state.isProcessing) return;
+
+      state.isProcessing = true;
+      state.lastCode = decodedText;
+
+      // --- EFEK DYNAMSOFT: Tampilkan Kotak di Area Barcode ---
+      if (result && result.corners) {
+        drawDynamicBox(result.corners);
+      }
+
+      // Input data
+      document.getElementById('scan-inp').value = decodedText;
+      processData(decodedText);
+
+      // Cooldown 2 detik (Tanpa Getar)
+      setTimeout(() => {
+        dynamicBox.style.display = 'none';
+        state.isProcessing = false;
+      }, 2000);
+    }
+  );
 }
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.display = 'block';
-  setTimeout(() => t.style.display = 'none', 2000);
+function drawDynamicBox(corners) {
+  const dynamicBox = document.getElementById('dynamic-box');
+  const reader = document.getElementById('reader');
+  
+  // Hitung posisi kotak berdasarkan koordinat yang ditemukan library
+  // Catatan: Library html5-qrcode memberikan koordinat relatif terhadap video
+  const left = Math.min(...corners.map(c => c.x));
+  const top = Math.min(...corners.map(c => c.y));
+  const width = Math.max(...corners.map(c => c.x)) - left;
+  const height = Math.max(...corners.map(c => c.y)) - top;
+
+  dynamicBox.style.left = (left / reader.clientWidth * 100) + "%";
+  dynamicBox.style.top = (top / reader.clientHeight * 100) + "%";
+  dynamicBox.style.width = (width / reader.clientWidth * 100) + "%";
+  dynamicBox.style.height = (height / reader.clientHeight * 100) + "%";
+  dynamicBox.style.display = 'block';
 }
 
-// Support tombol Enter dari keyboard/hardware scanner
-document.getElementById('scan-inp').addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') handleScan();
-});
+function processData(val) {
+  if (state.mode === 'resi') {
+    state.resi = val;
+    state.mode = 'produksi';
+    document.getElementById('resi-val').textContent = val;
+    document.getElementById('resi-card').classList.add('locked');
+    document.getElementById('scan-lbl').textContent = "SCAN KODE PRODUKSI";
+    document.getElementById('btn-reset').style.display = 'block';
+  } else {
+    const item = document.createElement('div');
+    item.className = 'prod-item';
+    item.textContent = val;
+    document.getElementById('prod-list').prepend(item);
+    // Di sini bisa tambahkan fetch(state.url) untuk simpan ke Sheets
+  }
+}
+
+function resetResi() {
+  state.mode = 'resi';
+  state.lastCode = '';
+  document.getElementById('resi-val').textContent = '— Kosong —';
+  document.getElementById('resi-card').classList.remove('locked');
+  document.getElementById('scan-lbl').textContent = "SCAN KODE RESI";
+  document.getElementById('btn-reset').style.display = 'none';
+  document.getElementById('prod-list').innerHTML = '';
+  document.getElementById('scan-inp').value = '';
+}
 </script>
-
 </body>
 </html>
